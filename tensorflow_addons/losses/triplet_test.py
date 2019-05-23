@@ -105,5 +105,98 @@ class TripletSemiHardLossTest(tf.test.TestCase):
         self.assertAlmostEqual(self.evaluate(loss), loss_np, 3)
 
 
+@test_util.run_all_in_graph_and_eager_modes
+class TripletSemiHardLossTest(test.TestCase):
+
+  def test_config(self):
+    mae_obj = keras.losses.MeanAbsoluteError(
+        reduction=losses_utils.ReductionV2.SUM, name='mae_1')
+    self.assertEqual(mae_obj.name, 'mae_1')
+    self.assertEqual(mae_obj.reduction, losses_utils.ReductionV2.SUM)
+
+  def test_all_correct_unweighted(self):
+    mae_obj = keras.losses.MeanAbsoluteError()
+    y_true = constant_op.constant([4, 8, 12, 8, 1, 3], shape=(2, 3))
+    loss = mae_obj(y_true, y_true)
+    self.assertAlmostEqual(self.evaluate(loss), 0.0, 3)
+
+  def test_unweighted(self):
+    mae_obj = keras.losses.MeanAbsoluteError()
+    y_true = constant_op.constant([1, 9, 2, -5, -2, 6], shape=(2, 3))
+    y_pred = constant_op.constant([4, 8, 12, 8, 1, 3],
+                                  shape=(2, 3),
+                                  dtype=dtypes.float32)
+    loss = mae_obj(y_true, y_pred)
+    self.assertAlmostEqual(self.evaluate(loss), 5.5, 3)
+
+  def test_scalar_weighted(self):
+    mae_obj = keras.losses.MeanAbsoluteError()
+    y_true = constant_op.constant([1, 9, 2, -5, -2, 6], shape=(2, 3))
+    y_pred = constant_op.constant([4, 8, 12, 8, 1, 3],
+                                  shape=(2, 3),
+                                  dtype=dtypes.float32)
+    loss = mae_obj(y_true, y_pred, sample_weight=2.3)
+    self.assertAlmostEqual(self.evaluate(loss), 12.65, 3)
+
+  def test_sample_weighted(self):
+    mae_obj = keras.losses.MeanAbsoluteError()
+    y_true = constant_op.constant([1, 9, 2, -5, -2, 6], shape=(2, 3))
+    y_pred = constant_op.constant([4, 8, 12, 8, 1, 3],
+                                  shape=(2, 3),
+                                  dtype=dtypes.float32)
+    sample_weight = constant_op.constant([1.2, 3.4], shape=(2, 1))
+    loss = mae_obj(y_true, y_pred, sample_weight=sample_weight)
+    self.assertAlmostEqual(self.evaluate(loss), 81.4 / 6, 3)
+
+  def test_timestep_weighted(self):
+    mae_obj = keras.losses.MeanAbsoluteError()
+    y_true = constant_op.constant([1, 9, 2, -5, -2, 6], shape=(2, 3, 1))
+    y_pred = constant_op.constant([4, 8, 12, 8, 1, 3],
+                                  shape=(2, 3, 1),
+                                  dtype=dtypes.float32)
+    sample_weight = constant_op.constant([3, 6, 5, 0, 4, 2], shape=(2, 3))
+    loss = mae_obj(y_true, y_pred, sample_weight=sample_weight)
+    self.assertAlmostEqual(self.evaluate(loss), 83 / 6, 3)
+
+  def test_zero_weighted(self):
+    mae_obj = keras.losses.MeanAbsoluteError()
+    y_true = constant_op.constant([1, 9, 2, -5, -2, 6], shape=(2, 3))
+    y_pred = constant_op.constant([4, 8, 12, 8, 1, 3],
+                                  shape=(2, 3),
+                                  dtype=dtypes.float32)
+    loss = mae_obj(y_true, y_pred, sample_weight=0)
+    self.assertAlmostEqual(self.evaluate(loss), 0.0, 3)
+
+  def test_invalid_sample_weight(self):
+    mae_obj = keras.losses.MeanAbsoluteError()
+    y_true = constant_op.constant([1, 9, 2, -5, -2, 6], shape=(2, 3, 1))
+    y_pred = constant_op.constant([4, 8, 12, 8, 1, 3], shape=(2, 3, 1))
+    sample_weight = constant_op.constant([3, 6, 5, 0], shape=(2, 2))
+    with self.assertRaisesRegexp(
+        ValueError, r'Shapes \(2, 2\) and \(2, 3\) are incompatible'):
+      mae_obj(y_true, y_pred, sample_weight=sample_weight)
+
+  def test_no_reduction(self):
+    mae_obj = keras.losses.MeanAbsoluteError(
+        reduction=losses_utils.ReductionV2.NONE)
+    y_true = constant_op.constant([1, 9, 2, -5, -2, 6], shape=(2, 3))
+    y_pred = constant_op.constant([4, 8, 12, 8, 1, 3],
+                                  shape=(2, 3),
+                                  dtype=dtypes.float32)
+    loss = mae_obj(y_true, y_pred, sample_weight=2.3)
+    loss = self.evaluate(loss)
+    self.assertArrayNear(loss, [10.7333, 14.5666], 1e-3)
+
+  def test_sum_reduction(self):
+    mae_obj = keras.losses.MeanAbsoluteError(
+        reduction=losses_utils.ReductionV2.SUM)
+    y_true = constant_op.constant([1, 9, 2, -5, -2, 6], shape=(2, 3))
+    y_pred = constant_op.constant([4, 8, 12, 8, 1, 3],
+                                  shape=(2, 3),
+                                  dtype=dtypes.float32)
+    loss = mae_obj(y_true, y_pred, sample_weight=2.3)
+    self.assertAlmostEqual(self.evaluate(loss), 25.29999, 3)
+
+
 if __name__ == '__main__':
     tf.test.main()
