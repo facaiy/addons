@@ -84,8 +84,9 @@ case ${PYTHON} in
 esac
 
 if [[ -z "${COMMAND}" ]]; then
-    echo "command string cannot be empty"
-    exit 1
+    echo "Interactive mode:"
+    DOCKER_OPTS="$DOCKER_OPTS -it"
+    COMMAND="bash"
 fi
 
 DOCKER_CMD="${ENVIRONMENT_CMD} && ${COMMAND}"

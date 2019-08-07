@@ -54,6 +54,7 @@ Try these useful commands below:
 * Run CPU unit tests: `bash tools/run_docker.sh -c 'make unit-test'`
 * Run GPU unit tests: `bash tools/run_docker.sh -c 'make gpu-unit-test'`
 * All of the above: `bash tools/run_docker.sh -c 'make'`
+* Interactive mode: `bash tools/run_docker.sh`
 
 ## Coding style
 
